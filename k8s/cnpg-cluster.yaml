@@ -1,0 +1,45 @@
+# CloudNativePG (CNPG) PostgreSQL cluster backing Temporal.
+# The operator itself is installed by scripts/deploy.sh (Helm chart cloudnative-pg, namespace cnpg-system).
+#
+# CNPG exposes the primary as service  temporal-pg-rw.temporal.svc  (used in helm/values.yaml).
+# Local POC only: plain-text credentials, a single instance. For HA raise `instances` to 3.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: temporal-db-credentials
+  namespace: temporal
+type: kubernetes.io/basic-auth
+stringData:
+  username: temporal
+  password: temporal
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: temporal-pg
+  namespace: temporal
+spec:
+  instances: 1
+  storage:
+    size: 2Gi
+  bootstrap:
+    initdb:
+      database: temporal          # default store
+      owner: temporal
+      secret:
+        name: temporal-db-credentials
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {memory: 1Gi}
+---
+# Visibility store, created declaratively (needs CNPG >= 1.25).
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: temporal-visibility
+  namespace: temporal
+spec:
+  cluster:
+    name: temporal-pg
+  name: temporal_visibility
+  owner: temporal

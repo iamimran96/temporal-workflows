@@ -1,0 +1,24 @@
+# One-shot POC client: starts MlPipelineWorkflow, queries it, sends the approval
+# signal and prints the result. Uses the worker image, so no local Python is needed.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: temporal-poc
+  namespace: temporal
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels: {app: temporal-poc}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: poc
+          image: temporal-worker:dev
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "app.run_poc"]
+          env:
+            - {name: TEMPORAL_ADDRESS, value: "temporal-frontend.temporal.svc.cluster.local:7233"}
+            - {name: TEMPORAL_NAMESPACE, value: default}
+            - {name: TASK_QUEUE, value: mlops-pipeline}

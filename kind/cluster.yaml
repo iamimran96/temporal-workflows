@@ -1,0 +1,16 @@
+# kind cluster for Temporal + the separate flow worker.
+# Two nodes: one control-plane, one worker.
+#
+# Host ports (127.0.0.1 only):
+#   7233 -> Temporal frontend (gRPC)   for SDK clients / `temporal` CLI on the host
+#   8080 -> Temporal Web UI            http://127.0.0.1:8080
+# They map to the NodePorts defined in k8s/nodeports.yaml.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: temporal
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - {containerPort: 30233, hostPort: 7233, listenAddress: "127.0.0.1", protocol: TCP}
+      - {containerPort: 30880, hostPort: 8080, listenAddress: "127.0.0.1", protocol: TCP}
+  - role: worker

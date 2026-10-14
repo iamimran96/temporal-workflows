@@ -1,0 +1,27 @@
+# The separate worker for the flows. It only needs network access to the Temporal
+# frontend service; scale it independently of the Temporal server.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlops-worker
+  namespace: temporal
+  labels: {app: mlops-worker}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: mlops-worker}
+  template:
+    metadata:
+      labels: {app: mlops-worker}
+    spec:
+      containers:
+        - name: worker
+          image: temporal-worker:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: TEMPORAL_ADDRESS, value: "temporal-frontend.temporal.svc.cluster.local:7233"}
+            - {name: TEMPORAL_NAMESPACE, value: default}
+            - {name: TASK_QUEUE, value: mlops-pipeline}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}

@@ -1,0 +1,66 @@
+# Values for the official temporalio/temporal chart (https://go.temporal.io/helm-charts).
+# Minimal single-replica install for a local kind cluster:
+#   - persistence on the CloudNativePG cluster from k8s/cnpg-cluster.yaml (service temporal-pg-rw)
+#   - no Cassandra / Elasticsearch / Prometheus / Grafana
+server:
+  replicaCount: 1
+  # Server images >= 1.30 have no dockerize; they render the sprig config template
+  # from TEMPORAL_SERVER_CONFIG_FILE_PATH (chart 0.74 still defaults to dockerize).
+  configMapsToMount: sprig
+  setConfigFilePath: true
+  config:
+    numHistoryShards: 4          # local POC only; cannot be changed after the first install
+    namespaces:
+      create: true
+      namespace:
+        - name: default
+          retention: 3d
+    persistence:
+      default:
+        driver: sql
+        sql:
+          driver: postgres12
+          host: temporal-pg-rw
+          port: 5432
+          database: temporal
+          user: temporal
+          password: temporal
+          maxConns: 20
+          maxConnLifetime: 1h
+      visibility:
+        driver: sql
+        sql:
+          driver: postgres12
+          host: temporal-pg-rw
+          port: 5432
+          database: temporal_visibility
+          user: temporal
+          password: temporal
+          maxConns: 10
+          maxConnLifetime: 1h
+
+cassandra:
+  enabled: false
+mysql:
+  enabled: false
+postgresql:
+  enabled: false
+elasticsearch:
+  enabled: false
+prometheus:
+  enabled: false
+grafana:
+  enabled: false
+
+schema:
+  createDatabase:
+    enabled: false   # CNPG creates both databases (bootstrap.initdb + Database resource)
+  setup:
+    enabled: true
+  update:
+    enabled: true
+
+web:
+  enabled: true
+admintools:
+  enabled: true
